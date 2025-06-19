@@ -1,0 +1,49 @@
+{
+  "name": "gomycode-mern-template-app",
+  "version": "1.0.0",
+  "description": "A modern MERN stack template with TypeScript for rapid full-stack development",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "start": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm run dev",
+    "client:build": "cd client && npm run build",
+    "client:preview": "cd client && npm run preview",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "install:server": "cd server && npm install",
+    "install:client": "cd client && npm install",
+    "clean": "cd server && rm -rf node_modules dist && cd ../client && rm -rf node_modules dist",
+    "lint": "cd client && npm run lint"
+  },
+  "keywords": [
+    "MERN",
+    "React",
+    "Node.js",
+    "Express",
+    "MongoDB",
+    "TypeScript",
+    "Vite",
+    "Tailwind CSS",
+    "Full Stack",
+    "Template",
+    "Boilerplate"
+  ],
+  "author": "mwenaro",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mwenaro/gomycode-mern-template-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mwenaro/gomycode-mern-template-app/issues"
+  },
+  "homepage": "https://github.com/mwenaro/gomycode-mern-template-app#readme",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -1,68 +1,128 @@
 import { useEffect, useState } from "react";
+import { useApi } from "../hooks/useApi";
+import { API_CONFIG } from "../config/api";
 import type { ITodo } from "./TodoItem";
 
 interface AddTodoFormProps {
   todo: ITodo | null;
-  setTodos: any;
+  setTodos: (todos: ITodo[]) => void;
   todos: ITodo[];
+  setSelectedTodo: (todo: ITodo | null) => void;
 }
 
-export function AddTodoForm({ todo, setTodos, todos }: AddTodoFormProps) {
+export function AddTodoForm({ 
+  todo, 
+  setTodos, 
+  todos, 
+  setSelectedTodo 
+}: AddTodoFormProps) {
   const [newTodo, setNewTodo] = useState<Partial<ITodo>>({ title: "" });
-  useEffect(()=>{
-    // console.log({todo})
-    setNewTodo(todo||{title:""})
-  },[todo])
-// console.log({newTodo})
-  // handle change
-  function handleChange(e: any) {
+  const { post, put, loading, error, clearError } = useApi();
+
+  useEffect(() => {
+    setNewTodo(todo || { title: "" });
+    clearError();
+  }, [todo, clearError]);
+
+  // Handle input change
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setNewTodo({ ...newTodo, title: e.target.value });
-    console.log(newTodo);
   }
 
-  function handleSubmit() {
-    if (!newTodo.title) return;
-    fetch(`http://localhost:5000/todos${newTodo._id?"/"+newTodo._id : ""} `, {
-      method:newTodo?._id?"PUT": "POST",
-      body: JSON.stringify(newTodo),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((body) => {
-        // console.log({body})
-        if (!body.success) throw Error("An Error has occured!");
-       
-        if (body.data){
-          if(newTodo._id) return setTodos(todos.map(t=>t._id===newTodo._id?body.data:t))
-           setTodos([body.data, ...todos]);
+  // Handle form submission
+  async function handleSubmit() {
+    if (!newTodo.title?.trim()) {
+      alert("Please enter a todo title");
+      return;
+    }
+
+    const isEditing = !!newTodo._id;
+    const endpoint = isEditing 
+      ? `${API_CONFIG.ENDPOINTS.TODOS}/${newTodo._id}`
+      : API_CONFIG.ENDPOINTS.TODOS;
+
+    const apiCall = isEditing ? put : post;
+
+    await apiCall(
+      endpoint,
+      { title: newTodo.title.trim(), completed: newTodo.completed || false },
+      {
+        onSuccess: (data) => {
+          if (isEditing) {
+            setTodos(todos.map(t => t._id === newTodo._id ? data : t));
+          } else {
+            setTodos([data, ...todos]);
           }
-        alert("Todo Added Successfully");
-        
-        setNewTodo({ title: "" });
-      })
-      .catch((error: any) => console.log("Error " + error.message));
+          
+          alert(`Todo ${isEditing ? 'updated' : 'added'} successfully`);
+          setSelectedTodo(null);
+          setNewTodo({ title: "" });
+        },
+        onError: (error) => {
+          console.error("Submit error:", error);
+          alert(`Error ${isEditing ? 'updating' : 'adding'} todo: ${error}`);
+        }
+      }
+    );
+  }
+
+  // Handle Enter key press
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
   }
 
   return (
-    <div className="p-4 flex justify-between">
-      <input
-          value={newTodo.title}
-        onChange={handleChange}
-        onKeyDown={(e)=>{
-            
-            if(e.code.toLowerCase() !== 'enter') return
-            handleSubmit()
-        }}
-        className="px-6 py-3 bg-slate-50 text-black rounded-md"
-      />
-      <button
-        onClick={() => handleSubmit()}
-        className="px-4 py-2 rounded bg-green-500 text-white"
-      >
-        Save
-      </button>
+    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        {newTodo._id ? 'Edit Todo' : 'Add New Todo'}
+      </h2>
+      
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <input
+          type="text"
+          value={newTodo.title || ""}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Enter your todo..."
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          disabled={loading}
+        />
+        
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !newTodo.title?.trim()}
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md font-medium transition-colors duration-200 min-w-[80px]"
+        >
+          {loading 
+            ? 'Saving...' 
+            : newTodo._id 
+            ? 'Update' 
+            : 'Add'
+          }
+        </button>
+        
+        {newTodo._id && (
+          <button
+            onClick={() => {
+              setSelectedTodo(null);
+              setNewTodo({ title: "" });
+              clearError();
+            }}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white rounded-md font-medium transition-colors duration-200"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </div>
   );
 }
